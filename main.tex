@@ -1,67 +1,223 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
-
-% Paquetes esenciales
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage[utf8]{inputenc} 
+\usepackage[english]{babel} 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{booktabs} 
+\usepackage{url}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
 
-\title{Laboratory Report 1: Implementation of Logic Circuits}
+\title{Laboratory Report 1: Implementation of Combinational Logic Circuits on Zynq UltraScale+\\}
 
-% Autores separados correctamente usando \and
-\author{
-    \IEEEauthorblockN{Cristopher J. Balam-Góngora}
-    \and
-    \IEEEauthorblockN{Daniel A. Batun-Leon}
-    \and
-    \IEEEauthorblockN{Christian A. Cetina-Sanchez}
-    \and
-    \IEEEauthorblockN{Erick E. Canul-Segovia}
-    \and
-    \IEEEauthorblockN{Javier Rosado-Penes}
-} 
-
+\author{\IEEEauthorblockN{Cristopher J. Balam-Góngora, Daniel A. Batun-Leon, Christian A. Cetina-Sanchez \\\\
+Erick E. Canul-Segovia, Javier Rosado-Penes}
+\IEEEauthorblockA{\textit{Faculty of Engineering, Universidad Autónoma de Yucatán (UADY)}}} 
 \maketitle
 
 \begin{abstract}
-% Escribe tu resumen aquí (máximo 150-250 palabras).
+This document details the methodology and performance analysis of implementing two combinational logic circuits using the VHDL hardware description language. Utilizing the Vivado 2026.1 platform and the architecture of the AMD Zynq UltraScale+ MPSoC (XCZU3EG) FPGA, logic functions were synthesized, evaluating their translation from mathematical abstraction and algorithmic schematic (RTL) to their technological mapping in look-up tables (LUTs). The physical area consumption was determined, and the system speed was characterized by measuring the asynchronous propagation delay, demonstrating the majority impact of physical routing interconnections in high-density arrays.
 \end{abstract}
 
 \begin{IEEEkeywords}
-% Escribe entre 3 y 5 palabras clave separadas por comas.
-Logic circuits, Boolean algebra, gates
+FPGA, VHDL, Vivado, Zynq UltraScale+, LUT, RTL.
 \end{IEEEkeywords}
 
 \section{Introduction}
-% Contexto de la práctica, objetivos e introducción teórica.
+Boolean algebra provides the necessary axiomatic framework for digital system design. In the current paradigm of field-programmable gate arrays (FPGAs), any mathematical expression is translated into a hardware model through description languages such as VHDL. 
+
+Diverging from legacy architectures, this practice is executed on an advanced hybrid AUP-ZU3 development board featuring the AMD Zynq UltraScale+ MPSoC device. The main purpose is to implement two independent combinational architectures, contrasting the behavior of the idealized logic circuit with the instantiation of real physical resources imposed by the compiler and the silicon routing matrix.
 
 \section{Methodology}
-% Materiales utilizados, diseño del circuito, diagramas.
+The design consisted of the integration of two independent logic systems to structure the comparative analysis. 
 
-\section{Results and Discussion}
-% Tablas de verdad empíricas, mediciones, problemas encontrados y cómo se resolvieron.
+The first circuit evaluates an asynchronous combinational function of four input variables ($A, B, C, D$) and one logic output ($F$), defined by the mathematical expression:
+\begin{equation}
+F = \overline{(AB+\overline{C}D)} + A\overline{B}C\overline{D} + A\overline{B}(C+D)
+\end{equation}
 
-\section{Conclusion}
-% Conclusiones principales derivadas de los resultados obtenidos.
+By algebraically expanding the circuit and evaluating the 16 possible combinations, Table \ref{tab1} was deduced, determining the active logic states of the output.
 
-\section*{Acknowledgment}
-% (Opcional) Agradecimientos a profesores o instituciones.
+\begin{table}[htbp]
+\caption{Truth Table - Boolean Function (Part I)}
+\begin{center}
+\begin{tabular}{ccccc|ccccc}
+\toprule
+$A$ & $B$ & $C$ & $D$ & $F$ & $A$ & $B$ & $C$ & $D$ & $F$ \\
+\midrule
+0 & 0 & 0 & 0 & \textbf{1} & 1 & 0 & 0 & 0 & \textbf{1} \\
+0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & \textbf{1} \\
+0 & 0 & 1 & 0 & \textbf{1} & 1 & 0 & 1 & 0 & \textbf{1} \\
+0 & 0 & 1 & 1 & \textbf{1} & 1 & 0 & 1 & 1 & \textbf{1} \\
+0 & 1 & 0 & 0 & \textbf{1} & 1 & 1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 \\
+0 & 1 & 1 & 0 & \textbf{1} & 1 & 1 & 1 & 0 & 0 \\
+0 & 1 & 1 & 1 & \textbf{1} & 1 & 1 & 1 & 1 & 0 \\
+\bottomrule
+\end{tabular}
+\label{tab1}
+\end{center}
+\end{table}
 
-% Bibliografía
+The second circuit approaches the implementation from an equivalent schematic diagram of a parity detector or XNOR gate with two inputs ($i0, i1$) and one output ($eq$), described by the equation:
+\begin{equation}
+eq = (\overline{i0} \cdot \overline{i1}) + (i0 \cdot i1)
+\end{equation}
+
+Its behavior is documented in Table \ref{tab2}, evidencing exclusive activation upon equality of the input bits.
+
+\begin{table}[htbp]
+\caption{Truth Table - Equality Detector (Part II)}
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+$i0$ & $i1$ & $eq$ \\
+\midrule
+0 & 0 & \textbf{1} \\
+0 & 1 & 0 \\
+1 & 0 & 0 \\
+1 & 1 & \textbf{1} \\
+\bottomrule
+\end{tabular}
+\label{tab2}
+\end{center}
+\end{table}
+
+\subsection{VHDL Coding}
+The logic functions were implemented in the Vivado 2026.1 development environment. For the first part, a Dataflow approach was used, declaring intermediate signals to illustrate the gate hierarchy:
+
+{\footnotesize
+\begin{verbatim}
+entity P1E1 is
+  Port (a,b,c,d: in std_logic;
+        f1: out std_logic );
+end P1E1;
+
+architecture P1E1_arch of P1E1 is
+  signal E,F,G,H,I,J,K,L,M:std_logic;
+begin
+  E <= a and b;
+  F <= (not c) and d;
+  G <= a and (not b);
+  H <= c and (not d);
+  I <= c or d;
+  J <= G and H;
+  K <= not(E or F);
+  L <= G and I;
+  M <= J or L;
+  f1 <= M or K; 
+end P1E1_arch;
+\end{verbatim}
+}
+
+For the XNOR circuit (Part II), a direct concurrent structural architecture was chosen, synthesizing the behavior in a single line of code:
+
+{\footnotesize
+\begin{verbatim}
+entity Actividad2 is
+  Port ( i0 : in std_logic;
+         i1 : in std_logic;
+         eq : out std_logic);
+end Actividad2;
+
+architecture Act_arch of Actividad2 is
+begin
+  eq <= (not i0 and not i1) or (i0 and i1);
+end Act_arch;
+\end{verbatim}
+}
+
+To configure the physical environment, the constraints corresponding to the logic ports and the development board pins detailed in Table \ref{tab3} were established.
+
+\begin{table}[htbp]
+\caption{Constraints Table (XDC File)}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Logic Port} & \textbf{FPGA Pin} & \textbf{I/O Standard} \\
+\midrule
+a, b, c, d (P1) & AB1, AF1, AE3, AC2 & LVCMOS12 \\
+f1 (P1) & AH1 & LVCMOS12 \\
+i0, i1 (P2) & AB1, AF1 & LVCMOS12 \\
+eq (P2) & AF5 & LVCMOS12 \\
+\bottomrule
+\end{tabular}
+\label{tab3}
+\end{center}
+\end{table}
+
+\subsection{Physical Implementation}
+The spatial implementation was verified using the \textit{Device View} tool after routing execution. The routing meshes successfully converged towards the previously assigned \texttt{LVCMOS12} pins in the X1Y0 clock region matrix, demonstrating the fidelity of the XDC file. The visual verification of the system was recorded and documented in the supplementary evidence.
+
+\section{Performance Analysis}
+To establish a reference analysis, post-logic synthesis, the systems generated within the FPGA and their performance impact were evaluated. 
+
+Upon examining the \textit{View RTL Schematic}, the compiler exhibited the network of multiple interconnected primitive logic gates. However, in the \textit{View RTL Technology} (Post-Synthesis), the synthesizer mathematically compressed these topologies, mapping each circuit into high-speed static memory blocks (LUTs) coupled with physical I/O buffers (\texttt{IBUF} and \texttt{OBUF}). 
+
+Table \ref{tab4} encompasses the physical area consumption for the combinational procedures, evidencing zero consumption of sequential cells (Flip-Flops) and the high efficiency of the synthesizer.
+
+\begin{table}[htbp]
+\caption{Performance Impact (Silicon Utilization)}
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Process} & \textbf{LUTs} & \textbf{FFs} & \textbf{IOBs} & \textbf{Area \%} \\
+\midrule
+Function (P1) & 1 (LUT4) & 0 & 5 & <0.01 \\
+Schematic (P2) & 1 (LUT2) & 0 & 3 & <0.01 \\
+\midrule
+\textbf{Total} & \textbf{2} & \textbf{0} & \textbf{8} & \textbf{<0.01} \\
+\bottomrule
+\end{tabular}
+\label{tab4}
+\end{center}
+\end{table}
+
+Regarding the latency of the clockless system, Table \ref{tab5} details the propagation delay originated by the physical distance on the chip, measured in nanoseconds (ns).
+
+\begin{table}[htbp]
+\caption{Timing Analysis (Data Path Delay)}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Analysis Metric} & \textbf{Part 1} & \textbf{Part 2} \\
+\midrule
+Total Delay (ns) & 3.620 & 3.573 \\
+Routing Time & 2.066 & 2.055 \\
+Logic Time & 1.554 & 1.518 \\
+\midrule
+\textbf{Routing Dominance} & \textbf{57.1\%} & \textbf{57.5\%} \\
+\bottomrule
+\end{tabular}
+\label{tab5}
+\end{center}
+\end{table}
+
+\section{Conclusions}
+The practice successfully founded the microelectronic design flow using the VHDL environment. It was empirically demonstrated that conceptual development undergoes deep compression when synthesized into silicon hardware. The AMD Vivado compiler optimized extensive gate networks into the physical space of a single LUT. 
+
+Likewise, the performance analysis demonstrated that in dense lithographies, the main circuit latency ($>57\%$) resides in the electromagnetic propagation through the physical routing channels of the board, eclipsing the transistor switching itself of the logic cells. This exercise confirms the usefulness of FPGAs in RTL design, covering the workflow from abstract description to its mapping, implementation, and functional verification.
+
+\section*{Supplementary Evidence}
+The final results, including operation videos, RTL topology captures, detailed area utilization reports, the \textit{Timing Summary}, and the internal routing view (\textit{Device View}), are available in the following digital repository:
+\vspace{0.15cm}
+
+\noindent \textbf{Link to evidence:} \\ 
+\url{[INSERT_YOUR_LINK_HERE]}
+
 \begin{thebibliography}{00}
-
-\bibitem{ref1} 
-% Ejemplo de referencia
-% A. B. Author, ``Title of paper,'' Journal Name, vol. x, pp. xxx--xxx, Year.
-
+\bibitem{b1} P. J. Ashenden, \textit{The VHDL Cookbook}, 1st ed. Adelaide: Dept. of Computer Science, University of Adelaide, 1990.
+\bibitem{b2} Real Digital, \textit{AUP-ZU3 Reference Manual}, Rev. A1. [Online]. Available: www.realdigital.org
+\bibitem{b3} R. J. Tocci, N. S. Widmer, and G. L. Moss, \textit{Digital Systems: Principles and Applications}, 10th ed. Pearson Education, 2007.
 \end{thebibliography}
 
 \end{document}
